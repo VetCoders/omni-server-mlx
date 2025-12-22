@@ -1,0 +1,108 @@
+name: Loctree Code Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'src/**/*.py'
+      - 'tests/**/*.py'
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/libraxis-*'
+
+jobs:
+  loctree-analysis:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Loctree
+        run: |
+          pip install loctree-suite || echo "::warning::Loctree not available in PyPI, skipping"
+          which loct || echo "::notice::Loctree not installed"
+
+      - name: Run Loctree Scan
+        id: loctree
+        continue-on-error: true
+        run: |
+          if command -v loct &>/dev/null; then
+            echo "## Loctree Analysis Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Full scan
+            loct auto 2>/dev/null || true
+
+            # Health score
+            if [ -f .loctree/agent.json ]; then
+              HEALTH=$(cat .loctree/agent.json | python -c "import sys,json; d=json.load(sys.stdin); print(d['summary']['health_score'])")
+              echo "### Health Score: ${HEALTH}/100" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+
+              # Summary
+              echo "#### Summary" >> $GITHUB_STEP_SUMMARY
+              cat .loctree/agent.json | python -c "
+import sys, json
+d = json.load(sys.stdin)
+s = d['summary']
+print(f\"- Files analyzed: {s['files_analyzed']}\")
+print(f\"- Total LOC: {s['total_loc']}\")
+print(f\"- Dead exports: {s['dead_exports']}\")
+print(f\"- Same-language twins: {s['twins_same_language']}\")
+print(f\"- Circular imports: {s['circular_imports']}\")
+" >> $GITHUB_STEP_SUMMARY
+
+              # Priority note
+              cat .loctree/agent.json | python -c "
+import sys, json
+d = json.load(sys.stdin)
+if d['summary'].get('priority'):
+    print(f\"\n> **Priority**: {d['summary']['priority']}\")
+" >> $GITHUB_STEP_SUMMARY
+
+              # Fail on low health
+              if [ $HEALTH -lt 50 ]; then
+                echo "::error::Health score ${HEALTH} is below threshold (50)"
+                exit 1
+              fi
+            fi
+          else
+            echo "::notice::Loctree not installed, skipping analysis"
+          fi
+
+      - name: Check for Dead Exports
+        if: always()
+        run: |
+          if command -v loct &>/dev/null; then
+            loct deadexports --fail-on-high 2>/dev/null || echo "::warning::Found high-confidence dead exports"
+          fi
+
+      - name: Check for Cross-Language Twins
+        if: always()
+        run: |
+          if command -v loct &>/dev/null; then
+            loct twins --fail-on-cross 2>/dev/null || echo "::warning::Found cross-language duplicates"
+          fi
+
+      - name: Upload Loctree Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loctree-report
+          path: .loctree/
+          if-no-files-found: ignore
+
+# Created by M&K (c)2025 The LibraxisAI Team
+# Co-Authored-By: Maciej Gad <void@div0.space>
+# Co-Authored-By: Klaudiusz <the1st@whoai.am>

@@ -172,3 +172,7 @@ CLAUDE.md
 CLAUDE.local.md
 GEMINI.md
 .claude
+
+# Loctree cache
+.loctree/
+/.ai-agents
