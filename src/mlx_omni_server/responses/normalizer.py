@@ -173,10 +173,14 @@ def normalise_responses_payload(body: dict[str, Any]) -> dict[str, Any]:
 
     # Normalize modalities
     copy.setdefault("modalities", DEFAULT_MODALITIES)
-    copy["modalities"] = _normalise_modalities(copy.get("modalities"), DEFAULT_MODALITIES)
+    copy["modalities"] = _normalise_modalities(
+        copy.get("modalities"), DEFAULT_MODALITIES
+    )
 
     output_modalities = copy.get("output_modalities")
-    copy["output_modalities"] = _normalise_modalities(output_modalities, copy["modalities"])
+    copy["output_modalities"] = _normalise_modalities(
+        output_modalities, copy["modalities"]
+    )
 
     return copy
 
@@ -237,7 +241,11 @@ def parts_to_plaintext(parts: Iterable[dict[str, Any]] | Any) -> str:
         elif part_type == "input_image":
             url = part.get("image_url") or part.get("image_base64")
             if url:
-                lines.append(f"[Image: {url[:50]}...]" if len(str(url)) > 50 else f"[Image: {url}]")
+                lines.append(
+                    f"[Image: {url[:50]}...]"
+                    if len(str(url)) > 50
+                    else f"[Image: {url}]"
+                )
         elif part_type == "input_audio":
             url = part.get("audio_url")
             if url:
@@ -250,9 +258,8 @@ def parts_to_plaintext(parts: Iterable[dict[str, Any]] | Any) -> str:
             text = part.get("text")
             if text:
                 lines.append(_stringify(text))
-        else:
-            if "text" in part:
-                lines.append(_stringify(part["text"]))
+        elif "text" in part:
+            lines.append(_stringify(part["text"]))
 
     return "\n".join(lines)
 
@@ -281,8 +288,7 @@ def collect_system_preamble(body: dict[str, Any]) -> list[str]:
         schema_text = _stringify(formatter)
         preamble.append(
             "When responding, conform strictly to the following JSON schema. "
-            "Do not include any prose outside the JSON.\n"
-            + schema_text
+            "Do not include any prose outside the JSON.\n" + schema_text
         )
 
     # Reasoning guidance

@@ -80,9 +80,9 @@ class TestMLXWrapperCache:
 
         # Fill cache to capacity and test LRU order
         time.sleep(0.01)
-        wrapper2 = self.cache.get_wrapper("model2")
+        self.cache.get_wrapper("model2")
         time.sleep(0.01)
-        wrapper3 = self.cache.get_wrapper("model3")
+        self.cache.get_wrapper("model3")
 
         info = self.cache.get_cache_info()
         assert info["cache_size"] == 3
@@ -91,7 +91,7 @@ class TestMLXWrapperCache:
         assert "model3" in info["lru_order"][0]
 
         # Test LRU eviction - add fourth item should evict oldest (model1)
-        wrapper4 = self.cache.get_wrapper("model4")
+        self.cache.get_wrapper("model4")
         final_info = self.cache.get_cache_info()
         assert final_info["cache_size"] == 3
 
@@ -174,7 +174,7 @@ class TestMLXWrapperCacheThreadSafety:
             same_key_wrappers = [
                 wrapper for key_type, wrapper in self.results if key_type == "same"
             ]
-            assert len(set(id(wrapper) for wrapper in same_key_wrappers)) == 1
+            assert len({id(wrapper) for wrapper in same_key_wrappers}) == 1
             first_creation_count = self.creation_count
             assert first_creation_count == 1
 
@@ -196,7 +196,7 @@ class TestMLXWrapperCacheThreadSafety:
             different_key_wrappers = [
                 wrapper for key_type, wrapper in self.results if key_type == "different"
             ]
-            assert len(set(id(wrapper) for wrapper in different_key_wrappers)) == 3
+            assert len({id(wrapper) for wrapper in different_key_wrappers}) == 3
             assert self.creation_count == first_creation_count + 3
 
 

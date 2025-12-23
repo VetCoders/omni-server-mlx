@@ -24,6 +24,6 @@ async def create_image(request: ImageGenerationRequest) -> ImageGenerationRespon
         return ImageGenerationResponse(created=int(time.time()), data=images)
 
     except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
+        raise HTTPException(status_code=400, detail=str(ve)) from ve
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

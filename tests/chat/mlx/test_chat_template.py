@@ -1,4 +1,5 @@
 from mlx_lm import load
+
 from mlx_omni_server.chat.mlx.tools.chat_template import ChatTemplate
 
 
@@ -212,7 +213,9 @@ class TestChatTemplate:
         messages = [{"role": "user", "content": "test"}]
 
         # This should not raise an error even with extra kwargs
-        prompt = chat_template.apply_chat_template(messages=messages, custom_param="test_value")
+        prompt = chat_template.apply_chat_template(
+            messages=messages, custom_param="test_value"
+        )
         assert isinstance(prompt, str)
 
     def test_tool_calls_json_conversion(self):

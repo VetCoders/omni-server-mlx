@@ -28,7 +28,7 @@ def handle_model_error(e: Exception) -> None:
     """Handle model-related errors and raise appropriate HTTP exceptions"""
     if isinstance(e, ValueError):
         raise HTTPException(status_code=404, detail=str(e))
-    print(f"Error processing request: {str(e)}")
+    print(f"Error processing request: {e!s}")
     raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -11,7 +11,6 @@ from mlx_omni_server.main import app
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-from pydantic import BaseModel
 
 
 @pytest.fixture
@@ -34,7 +33,6 @@ class MathReasoning(BaseModel):
 
 
 class TestStructuredOutput:
-
     def test_structured_output_with_json_schema(self, client):
         """
         Test structured generation with a JSON schema.

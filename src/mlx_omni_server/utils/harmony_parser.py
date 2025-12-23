@@ -180,7 +180,7 @@ def apply_harmony_parsing(result: dict[str, Any], model: str) -> dict[str, Any]:
 
 def create_harmony_conversation(
     messages: list[dict[str, str]],
-) -> "Conversation | None":
+) -> Conversation | None:
     """
     Create an openai_harmony Conversation from chat messages.
 
@@ -213,7 +213,7 @@ def create_harmony_conversation(
     return Conversation.from_messages(harmony_messages)
 
 
-def render_harmony_prompt(conversation: "Conversation") -> str:
+def render_harmony_prompt(conversation: Conversation) -> str:
     """
     Render Harmony conversation to prompt string.
 
@@ -231,10 +231,10 @@ def render_harmony_prompt(conversation: "Conversation") -> str:
 
 __all__ = [
     "HARMONY_AVAILABLE",
+    "apply_harmony_parsing",
+    "build_harmony_output_entries",
+    "create_harmony_conversation",
     "is_harmony_model",
     "parse_reasoning_channels",
-    "build_harmony_output_entries",
-    "apply_harmony_parsing",
-    "create_harmony_conversation",
     "render_harmony_prompt",
 ]

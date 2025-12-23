@@ -5,7 +5,8 @@ and the internal MLX generation interface.
 """
 
 import uuid
-from typing import Any, Dict, Generator, List, Optional
+from collections.abc import Generator
+from typing import Any
 
 from mlx_omni_server.chat.anthropic.anthropic_schema import (
     AnthropicTool,
@@ -44,8 +45,8 @@ class AnthropicMessagesAdapter:
         self._generate_wrapper = wrapper
 
     def _convert_system_to_messages(
-        self, system: Optional[SystemPrompt], messages: List[InputMessage]
-    ) -> List[Dict[str, Any]]:
+        self, system: SystemPrompt | None, messages: list[InputMessage]
+    ) -> list[dict[str, Any]]:
         """Convert system prompt and messages to MLX format.
 
         Args:
@@ -124,8 +125,8 @@ class AnthropicMessagesAdapter:
         return mlx_messages
 
     def _convert_tools_to_mlx(
-        self, tools: Optional[List[AnthropicTool]]
-    ) -> Optional[List[Dict[str, Any]]]:
+        self, tools: list[AnthropicTool] | None
+    ) -> list[dict[str, Any]] | None:
         """Convert Anthropic tools to MLX format.
 
         Args:
@@ -155,7 +156,7 @@ class AnthropicMessagesAdapter:
 
         return mlx_tools
 
-    def _prepare_generation_params(self, request: MessagesRequest) -> Dict[str, Any]:
+    def _prepare_generation_params(self, request: MessagesRequest) -> dict[str, Any]:
         """Prepare parameters for MLX generation.
 
         Args:
@@ -176,7 +177,7 @@ class AnthropicMessagesAdapter:
         # Handle thinking configuration
         if request.thinking and isinstance(request.thinking, ThinkingConfigEnabled):
             template_kwargs["enable_thinking"] = True
-            # template_kwargs["thinking_budget"] = request.thinking.budget_tokens
+            # Note: thinking_budget not yet implemented in ChatGenerator
 
         # Prepare sampler configuration
         sampler_config = {
@@ -197,19 +198,16 @@ class AnthropicMessagesAdapter:
             "enable_prompt_cache": True,
         }
 
-        # Note: ChatGenerator doesn't currently support stop_sequences
-        # This is a known limitation that will be addressed in the future
-        # if request.stop_sequences:
-        #     params["stop_sequences"] = request.stop_sequences
+        # Note: stop_sequences not yet supported by ChatGenerator
 
         return params
 
     def _create_content_blocks(
         self,
-        text_content: Optional[str],
-        reasoning_content: Optional[str],
-        tool_calls: Optional[List[Any]] = None,
-    ) -> List[ContentBlock]:
+        text_content: str | None,
+        reasoning_content: str | None,
+        tool_calls: list[Any] | None = None,
+    ) -> list[ContentBlock]:
         """Create content blocks from generation result.
 
         Args:
@@ -248,7 +246,7 @@ class AnthropicMessagesAdapter:
         return blocks
 
     def _map_finish_reason(
-        self, finish_reason: Optional[str], has_tool_calls: bool
+        self, finish_reason: str | None, has_tool_calls: bool
     ) -> StopReason:
         """Map internal finish reason to Anthropic format.
 
@@ -262,14 +260,12 @@ class AnthropicMessagesAdapter:
         if has_tool_calls:
             return StopReason.TOOL_USE
 
-        if finish_reason == "stop":
-            return StopReason.END_TURN
-        elif finish_reason == "length":
-            return StopReason.MAX_TOKENS
-        elif finish_reason == "stop_sequence":
-            return StopReason.STOP_SEQUENCE
-        else:
-            return StopReason.END_TURN
+        reason_map = {
+            "stop": StopReason.END_TURN,
+            "length": StopReason.MAX_TOKENS,
+            "stop_sequence": StopReason.STOP_SEQUENCE,
+        }
+        return reason_map.get(finish_reason, StopReason.END_TURN)
 
     def generate(self, request: MessagesRequest) -> MessagesResponse:
         """Generate complete response using the wrapper.
@@ -317,9 +313,9 @@ class AnthropicMessagesAdapter:
 
         except Exception as e:
             logger.error(
-                f"Failed to generate Anthropic completion: {str(e)}", exc_info=True
+                f"Failed to generate Anthropic completion: {e!s}", exc_info=True
             )
-            raise RuntimeError(f"Failed to generate completion: {str(e)}")
+            raise RuntimeError(f"Failed to generate completion: {e!s}") from e
 
     def generate_stream(
         self, request: MessagesRequest
@@ -465,6 +461,6 @@ class AnthropicMessagesAdapter:
 
         except Exception as e:
             logger.error(
-                f"Error during Anthropic stream generation: {str(e)}", exc_info=True
+                f"Error during Anthropic stream generation: {e!s}", exc_info=True
             )
             raise

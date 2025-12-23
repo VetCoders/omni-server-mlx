@@ -32,12 +32,12 @@ T = TypeVar("T")
 class ProviderType(Enum):
     """Supported provider types."""
 
-    MLX = "mlx"           # Local MLX models
-    OLLAMA = "ollama"     # Ollama server
+    MLX = "mlx"  # Local MLX models
+    OLLAMA = "ollama"  # Ollama server
     LMSTUDIO = "lmstudio"  # LM Studio
-    OPENAI = "openai"     # OpenAI API
+    OPENAI = "openai"  # OpenAI API
     ANTHROPIC = "anthropic"  # Anthropic API
-    CUSTOM = "custom"     # Custom OpenAI-compatible endpoint
+    CUSTOM = "custom"  # Custom OpenAI-compatible endpoint
 
 
 @dataclass
@@ -174,54 +174,64 @@ class MultiProviderRouter:
         # Primary local provider
         llm_base_url = os.environ.get("LLM_BASE_URL")
         if llm_base_url:
-            self.add_provider(Provider(
-                name="primary",
-                base_url=llm_base_url.rstrip("/"),
-                provider_type=self._detect_provider_type(llm_base_url),
-                priority=1,
-            ))
+            self.add_provider(
+                Provider(
+                    name="primary",
+                    base_url=llm_base_url.rstrip("/"),
+                    provider_type=self._detect_provider_type(llm_base_url),
+                    priority=1,
+                )
+            )
 
         # Secondary local provider
         llm_alt_url = os.environ.get("LLM_ALT_BASE_URL")
         if llm_alt_url:
-            self.add_provider(Provider(
-                name="secondary",
-                base_url=llm_alt_url.rstrip("/"),
-                provider_type=self._detect_provider_type(llm_alt_url),
-                priority=2,
-            ))
+            self.add_provider(
+                Provider(
+                    name="secondary",
+                    base_url=llm_alt_url.rstrip("/"),
+                    provider_type=self._detect_provider_type(llm_alt_url),
+                    priority=2,
+                )
+            )
 
         # Additional URLs from list
         llm_base_urls = self._parse_url_list(os.environ.get("LLM_BASE_URLS", ""))
         for i, url in enumerate(llm_base_urls):
             if url not in [llm_base_url, llm_alt_url]:
-                self.add_provider(Provider(
-                    name=f"upstream-{i+1}",
-                    base_url=url.rstrip("/"),
-                    provider_type=self._detect_provider_type(url),
-                    priority=3 + i,
-                ))
+                self.add_provider(
+                    Provider(
+                        name=f"upstream-{i + 1}",
+                        base_url=url.rstrip("/"),
+                        provider_type=self._detect_provider_type(url),
+                        priority=3 + i,
+                    )
+                )
 
         # Ollama (if configured separately)
         ollama_url = os.environ.get("OLLAMA_API_URL")
         if ollama_url and ollama_url not in [llm_base_url, llm_alt_url]:
-            self.add_provider(Provider(
-                name="ollama",
-                base_url=ollama_url.rstrip("/"),
-                provider_type=ProviderType.OLLAMA,
-                priority=5,
-            ))
+            self.add_provider(
+                Provider(
+                    name="ollama",
+                    base_url=ollama_url.rstrip("/"),
+                    provider_type=ProviderType.OLLAMA,
+                    priority=5,
+                )
+            )
 
         # Cloud providers (only if API keys present)
         if os.environ.get("OPENAI_API_KEY"):
-            self.add_provider(Provider(
-                name="openai",
-                base_url="https://api.openai.com/v1",
-                provider_type=ProviderType.OPENAI,
-                priority=10,
-                auth_type="bearer",
-                api_key_env="OPENAI_API_KEY",
-            ))
+            self.add_provider(
+                Provider(
+                    name="openai",
+                    base_url="https://api.openai.com/v1",
+                    provider_type=ProviderType.OPENAI,
+                    priority=10,
+                    auth_type="bearer",
+                    api_key_env="OPENAI_API_KEY",
+                )
+            )
 
     def _detect_provider_type(self, url: str) -> ProviderType:
         """Detect provider type from URL pattern."""

@@ -15,11 +15,14 @@ from mlx_omni_server.responses.normalizer import (
     responses_to_chat_messages,
 )
 from mlx_omni_server.responses.schema import (
-    ContentPartType,
     ResponseRequest,
     ResponseStatus,
     build_error_response,
     build_text_output,
+)
+from mlx_omni_server.utils.harmony_parser import (
+    is_harmony_model,
+    parse_reasoning_channels,
 )
 
 
@@ -121,7 +124,10 @@ class TestResponsesNormalizer:
                     "role": "user",
                     "content": [
                         {"type": "input_text", "text": "What is this?"},
-                        {"type": "input_image", "image_url": "https://example.com/img.png"},
+                        {
+                            "type": "input_image",
+                            "image_url": "https://example.com/img.png",
+                        },
                     ],
                 }
             ]
@@ -136,7 +142,11 @@ class TestResponsesNormalizer:
 
     def test_has_media_content_text_only(self):
         """Text-only content should not be detected as media."""
-        body = {"input": [{"role": "user", "content": [{"type": "input_text", "text": "Hi"}]}]}
+        body = {
+            "input": [
+                {"role": "user", "content": [{"type": "input_text", "text": "Hi"}]}
+            ]
+        }
         assert not has_media_content(body)
 
     def test_has_media_content_with_image(self):
@@ -145,7 +155,12 @@ class TestResponsesNormalizer:
             "input": [
                 {
                     "role": "user",
-                    "content": [{"type": "input_image", "image_url": "http://example.com/img.png"}],
+                    "content": [
+                        {
+                            "type": "input_image",
+                            "image_url": "http://example.com/img.png",
+                        }
+                    ],
                 }
             ]
         }
@@ -189,8 +204,6 @@ class TestHarmonyParser:
 
     def test_parse_reasoning_channels(self):
         """Should parse analysis and final channels."""
-        from mlx_omni_server.utils.harmony_parser import parse_reasoning_channels
-
         reasoning = """analysis:
 This is my analysis.
 I'm thinking about the problem.
@@ -207,8 +220,6 @@ Here is my answer."""
 
     def test_is_harmony_model(self):
         """Should detect Harmony models by name."""
-        from mlx_omni_server.utils.harmony_parser import is_harmony_model
-
         assert is_harmony_model("gpt-oss-120b")
         assert is_harmony_model("openai/gpt-oss-1b")
         assert is_harmony_model("harmony-test")

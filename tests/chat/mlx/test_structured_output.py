@@ -58,7 +58,6 @@ math_tutor_json_schema = {
 
 
 class TestStructuredOutput:
-
     def test_json_schema(self):
         """Test structured generation with a JSON schema."""
         # Try to load reasoning model

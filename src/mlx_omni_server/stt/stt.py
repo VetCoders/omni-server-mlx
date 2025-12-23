@@ -33,4 +33,4 @@ async def create_transcription(request: STTRequestForm = Depends()):
             return JSONResponse(content=result)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

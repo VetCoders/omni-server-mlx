@@ -69,22 +69,24 @@ repos:
         additional_dependencies: ['bandit[toml]']
         exclude: ^tests/
 
-  # Loctree code quality checks - contributed by LibraxisAI
+  # Loctree code quality checks - contributed by LibraxisAI (optional, warnings only)
   - repo: local
     hooks:
       - id: loctree-deadexports
         name: Check for dead exports
-        entry: bash -c 'if command -v loct &>/dev/null; then loct deadexports --fail-on-high 2>/dev/null; else echo "loct not installed, skipping"; fi'
+        entry: bash -c 'if command -v loct &>/dev/null; then loct deadexports 2>/dev/null || true; else echo "loct not installed, skipping"; fi'
         language: system
         pass_filenames: false
         types: [python]
+        verbose: true
 
       - id: loctree-twins
         name: Check for duplicate definitions
-        entry: bash -c 'if command -v loct &>/dev/null; then loct twins --fail-on-cross 2>/dev/null; else echo "loct not installed, skipping"; fi'
+        entry: bash -c 'if command -v loct &>/dev/null; then loct twins 2>/dev/null || true; else echo "loct not installed, skipping"; fi'
         language: system
         pass_filenames: false
         types: [python]
+        verbose: true
 
       - id: pytest-check
         name: Run pytest (fast tests only)

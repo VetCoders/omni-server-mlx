@@ -14,8 +14,9 @@ from __future__ import annotations
 import asyncio
 import threading
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from ..utils.logger import logger
 
@@ -25,8 +26,8 @@ T = TypeVar("T")
 class CircuitState(Enum):
     """Circuit breaker states."""
 
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"          # Rejecting requests
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Rejecting requests
     HALF_OPEN = "half_open"  # Testing recovery
 
 
@@ -37,8 +38,7 @@ class CircuitBreakerOpen(Exception):
         self.name = name
         self.remaining_timeout = remaining_timeout
         super().__init__(
-            f"Circuit breaker '{name}' is OPEN. "
-            f"Retry after {remaining_timeout:.1f}s"
+            f"Circuit breaker '{name}' is OPEN. Retry after {remaining_timeout:.1f}s"
         )
 
 
@@ -166,8 +166,7 @@ class CircuitBreaker:
             self._state = CircuitState.OPEN
             self._success_count = 0
             logger.warning(
-                f"Circuit breaker '{self.name}' re-OPENED "
-                f"after failure during recovery"
+                f"Circuit breaker '{self.name}' re-OPENED after failure during recovery"
             )
         elif self._failure_count >= self.failure_threshold:
             self._state = CircuitState.OPEN

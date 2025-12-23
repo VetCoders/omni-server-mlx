@@ -1,5 +1,7 @@
-import os
-import sys
+"""Pytest configuration for mlx-omni-server tests."""
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, os.path.join(project_root, "src"))
+import sys
+from pathlib import Path
+
+project_root = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(project_root / "src"))

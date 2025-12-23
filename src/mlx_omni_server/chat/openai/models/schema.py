@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, model_serializer
 
@@ -12,7 +12,7 @@ class Model(BaseModel):
         ..., description="Unix timestamp of when the model was created"
     )
     owned_by: str = Field(..., description="Organization that owns the model")
-    details: Optional[Dict[str, Any]] = Field(
+    details: dict[str, Any] | None = Field(
         default=None, description="Full model configuration (if details are requested)"
     )
 
@@ -34,7 +34,7 @@ class ModelList(BaseModel):
     """Response format for list of models"""
 
     object: str = Field(default="list", description="The object type (always 'list')")
-    data: List[Model] = Field(..., description="List of model objects")
+    data: list[Model] = Field(..., description="List of model objects")
 
 
 class ModelDeletion(BaseModel):

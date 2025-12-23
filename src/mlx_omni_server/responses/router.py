@@ -10,7 +10,6 @@ Contributed by LibraxisAI - https://libraxis.ai
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -75,7 +74,7 @@ async def create_response(
                         "code": "internal_error",
                     },
                 }
-                yield f"event: error\n"
+                yield "event: error\n"
                 yield f"data: {json.dumps(error_event)}\n\n"
 
         return StreamingResponse(

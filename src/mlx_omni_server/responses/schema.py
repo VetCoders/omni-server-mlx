@@ -58,7 +58,9 @@ class OutputItem(BaseModel):
     """Output item in response."""
 
     id: str = Field(default_factory=lambda: f"item_{uuid.uuid4().hex[:24]}")
-    type: Literal["message", "reasoning", "function_call", "function_call_output"] = "message"
+    type: Literal["message", "reasoning", "function_call", "function_call_output"] = (
+        "message"
+    )
     role: str | None = "assistant"
     status: ResponseStatus = ResponseStatus.COMPLETED
     content: list[dict[str, Any]] = Field(default_factory=list)
@@ -164,21 +166,25 @@ def build_text_output(text: str, reasoning: str | None = None) -> list[OutputIte
     items: list[OutputItem] = []
 
     if reasoning:
-        items.append(OutputItem(
-            id=f"rs_{uuid.uuid4().hex[:24]}",
-            type="reasoning",
+        items.append(
+            OutputItem(
+                id=f"rs_{uuid.uuid4().hex[:24]}",
+                type="reasoning",
+                role="assistant",
+                status=ResponseStatus.COMPLETED,
+                content=[{"type": "reasoning_text", "text": reasoning}],
+            )
+        )
+
+    items.append(
+        OutputItem(
+            id=f"msg_{uuid.uuid4().hex[:24]}",
+            type="message",
             role="assistant",
             status=ResponseStatus.COMPLETED,
-            content=[{"type": "reasoning_text", "text": reasoning}],
-        ))
-
-    items.append(OutputItem(
-        id=f"msg_{uuid.uuid4().hex[:24]}",
-        type="message",
-        role="assistant",
-        status=ResponseStatus.COMPLETED,
-        content=[{"type": "output_text", "text": text}],
-    ))
+            content=[{"type": "output_text", "text": text}],
+        )
+    )
 
     return items
 

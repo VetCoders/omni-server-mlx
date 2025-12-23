@@ -10,4 +10,4 @@ Contributed by LibraxisAI - https://libraxis.ai
 from .router import router
 from .schema import ResponseRequest, ResponseResponse
 
-__all__ = ["router", "ResponseRequest", "ResponseResponse"]
+__all__ = ["ResponseRequest", "ResponseResponse", "router"]

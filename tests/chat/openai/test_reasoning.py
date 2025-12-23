@@ -54,7 +54,7 @@ class TestReasoningResponse:
                 and choices.message.reasoning is not None
             ), "No reasoning in message"
         except Exception as e:
-            logger.error(f"Test error: {str(e)}")
+            logger.error(f"Test error: {e!s}")
             raise
 
     def test_deepseek_none_reasoning_response(self, openai_client):
@@ -82,5 +82,5 @@ class TestReasoningResponse:
                 choices.message.content is not None
             ), "Message content should not be None"
         except Exception as e:
-            logger.error(f"Test error: {str(e)}")
+            logger.error(f"Test error: {e!s}")
             raise

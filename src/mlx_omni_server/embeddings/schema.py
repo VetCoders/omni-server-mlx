@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,19 +10,17 @@ class ModelType(str, Enum):
 
 class EmbeddingRequest(BaseModel):
     model: str = Field(..., description="ID of the model to use")
-    input: Union[str, List[str]] = Field(
-        ..., description="Input text to get embeddings for"
-    )
-    encoding_format: Optional[str] = Field(
+    input: str | list[str] = Field(..., description="Input text to get embeddings for")
+    encoding_format: str | None = Field(
         "float", description="The format of the embeddings"
     )
-    user: Optional[str] = None
-    dimensions: Optional[int] = None
+    user: str | None = None
+    dimensions: int | None = None
 
     # Allow any additional fields
     model_config = ConfigDict(extra="allow")
 
-    def get_extra_params(self) -> Dict[str, Any]:
+    def get_extra_params(self) -> dict[str, Any]:
         """Get all extra parameters that aren't part of the standard OpenAI API."""
         standard_fields = {"model", "input", "encoding_format", "user", "dimensions"}
         return {k: v for k, v in self.model_dump().items() if k not in standard_fields}
@@ -30,7 +28,7 @@ class EmbeddingRequest(BaseModel):
 
 class EmbeddingData(BaseModel):
     object: str = "embedding"
-    embedding: List[float]
+    embedding: list[float]
     index: int
 
 
@@ -41,6 +39,6 @@ class EmbeddingUsage(BaseModel):
 
 class EmbeddingResponse(BaseModel):
     object: str = "list"
-    data: List[EmbeddingData]
+    data: list[EmbeddingData]
     model: str
     usage: EmbeddingUsage

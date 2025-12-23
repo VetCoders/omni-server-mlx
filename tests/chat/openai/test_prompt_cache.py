@@ -81,5 +81,5 @@ class TestPromptCache:
             )
 
         except Exception as e:
-            logger.error(f"Error testing prompt cache: {str(e)}")
+            logger.error(f"Error testing prompt cache: {e!s}")
             raise

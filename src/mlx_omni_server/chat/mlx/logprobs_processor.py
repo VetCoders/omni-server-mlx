@@ -1,6 +1,6 @@
 """Log probabilities processing utilities for MLX responses."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import mlx.core as mx
 
@@ -16,9 +16,7 @@ class LogprobsProcessor:
         """
         self.tokenizer = tokenizer
 
-    def process_logprobs(
-        self, response, top_k: Optional[int]
-    ) -> Optional[Dict[str, Any]]:
+    def process_logprobs(self, response, top_k: int | None) -> dict[str, Any] | None:
         """Process logprobs from MLX response.
 
         Args:
@@ -51,7 +49,9 @@ class LogprobsProcessor:
             top_indices = mx.argpartition(-current_logprobs, kth=top_k - 1)[:top_k]
             top_probs = mx.clip(current_logprobs[top_indices], a_min=-100, a_max=None)
 
-            for idx, logprob in zip(top_indices.tolist(), top_probs.tolist()):
+            for idx, logprob in zip(
+                top_indices.tolist(), top_probs.tolist(), strict=False
+            ):
                 token = self.tokenizer.decode([idx])
                 token_bytes = token.encode("utf-8")
                 top_logprobs.append(
@@ -60,9 +60,7 @@ class LogprobsProcessor:
 
         return {**token_info, "top_logprobs": top_logprobs}
 
-    def get_logprobs(
-        self, response, top_logprobs: Optional[int]
-    ) -> Optional[Dict[str, Any]]:
+    def get_logprobs(self, response, top_logprobs: int | None) -> dict[str, Any] | None:
         """Get logprobs from response if requested.
 
         Args:

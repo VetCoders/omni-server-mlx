@@ -4,7 +4,6 @@ Tests for circuit breaker implementation.
 Contributed by LibraxisAI - https://libraxis.ai
 """
 
-import asyncio
 import time
 
 import pytest

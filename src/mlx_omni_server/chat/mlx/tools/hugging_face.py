@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from ....utils.logger import logger
 from ..core_types import ToolCall
 from .base_tools import BaseToolParser, extract_tools
@@ -15,7 +13,7 @@ class HuggingFaceToolParser(BaseToolParser):
         self.end_tool_calls = "</tool_call>"
         self.strict_mode = False
 
-    def parse_tools(self, text: str) -> Optional[List[ToolCall]]:
+    def parse_tools(self, text: str) -> list[ToolCall] | None:
         """Parse tool calls from model output.
 
         Args:
@@ -26,12 +24,11 @@ class HuggingFaceToolParser(BaseToolParser):
         """
         try:
             # In strict mode, only allow exact tool_call format
-            if self.strict_mode:
-                if not (
-                    text.strip().startswith(self.start_tool_calls.strip())
-                    and text.strip().endswith(self.end_tool_calls)
-                ):
-                    return None
+            if self.strict_mode and not (
+                text.strip().startswith(self.start_tool_calls.strip())
+                and text.strip().endswith(self.end_tool_calls)
+            ):
+                return None
 
             # Parse tool calls using extract_tools (now returns CoreToolCall objects directly)
             tool_calls = extract_tools(text)

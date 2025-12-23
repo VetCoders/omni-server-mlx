@@ -1,6 +1,5 @@
 import json
 import uuid
-from typing import List, Optional
 
 from mlx_omni_server.utils.logger import logger
 
@@ -18,7 +17,7 @@ class Llama3ToolParser(BaseToolParser):
         self.strict_mode = False
         self.pre_fill_tools_prompt = ""
 
-    def _parse_strict_tools(self, text: str) -> Optional[List[CoreToolCall]]:
+    def _parse_strict_tools(self, text: str) -> list[CoreToolCall] | None:
         tool_calls = []
         logger.debug(f"_parse_strict_tools: {text}")
 
@@ -46,7 +45,7 @@ class Llama3ToolParser(BaseToolParser):
 
         return tool_calls if tool_calls else None
 
-    def parse_tools(self, text: str) -> Optional[List[ToolCall]]:
+    def parse_tools(self, text: str) -> list[ToolCall] | None:
         """Parse tool calls from model output.
 
         Args:

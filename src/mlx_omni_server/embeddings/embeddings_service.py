@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import mlx.core as mx
 import numpy as np
@@ -14,21 +14,21 @@ class EmbeddingsService:
 
     def __init__(self):
         # Map of loaded models for caching
-        self._models: Dict[str, Tuple[Any, Any]] = {}
+        self._models: dict[str, tuple[Any, Any]] = {}
         # Default encoder for token counting
         try:
             self._default_tokenizer = tiktoken.get_encoding("cl100k_base")
-        except:
+        except Exception:
             # Fallback to another common encoding if cl100k_base is not available
             try:
                 self._default_tokenizer = tiktoken.get_encoding("p50k_base")
-            except:
+            except Exception:
                 logger.warning(
                     "Could not load any tiktoken encoding, token counts may be inaccurate"
                 )
                 self._default_tokenizer = None
 
-    def _get_model(self, model_id: str) -> Tuple[Any, Any]:
+    def _get_model(self, model_id: str) -> tuple[Any, Any]:
         """Get or load a model based on its ID"""
         if model_id not in self._models:
             logger.info(f"Loading embedding model: {model_id}")
@@ -36,12 +36,12 @@ class EmbeddingsService:
                 model, processor = load(model_id)
                 self._models[model_id] = (model, processor)
             except Exception as e:
-                logger.error(f"Error loading embedding model {model_id}: {str(e)}")
-                raise RuntimeError(f"Failed to load embedding model: {str(e)}")
+                logger.error(f"Error loading embedding model {model_id}: {e!s}")
+                raise RuntimeError(f"Failed to load embedding model: {e!s}") from e
 
         return self._models[model_id]
 
-    def _count_tokens(self, text: Union[str, List[str]]) -> int:
+    def _count_tokens(self, text: str | list[str]) -> int:
         """Count tokens in input text"""
         if self._default_tokenizer is None:
             # If no tokenizer is available, use a simple approximation
@@ -57,7 +57,7 @@ class EmbeddingsService:
             elif isinstance(text, list):
                 return sum(len(self._default_tokenizer.encode(t)) for t in text)
         except Exception as e:
-            logger.warning(f"Error counting tokens: {str(e)}. Using fallback method.")
+            logger.warning(f"Error counting tokens: {e!s}. Using fallback method.")
             # Fallback to simple approximation
             if isinstance(text, str):
                 return len(text.split())
@@ -65,24 +65,17 @@ class EmbeddingsService:
                 return sum(len(t.split()) for t in text)
         return 0
 
-    def _ensure_float_list(self, embedding) -> List[float]:
+    def _ensure_float_list(self, embedding) -> list[float]:
         """Ensure embedding is a flat list of float values"""
         if isinstance(embedding, list):
             # Handle case where first element is itself a list or array
-            if len(embedding) > 0 and (
-                isinstance(embedding[0], list)
-                or isinstance(embedding[0], mx.array)
-                or isinstance(embedding[0], np.ndarray)
+            if len(embedding) > 0 and isinstance(
+                embedding[0], (list, mx.array, np.ndarray)
             ):
                 return [float(x) for x in embedding[0]]
             # Otherwise, convert each element to float
             return [float(x) for x in embedding]
-        elif isinstance(embedding, mx.array):
-            # Ensure array is 1D
-            if embedding.ndim > 1:
-                embedding = embedding.reshape(-1)
-            return [float(x) for x in embedding.tolist()]
-        elif isinstance(embedding, np.ndarray):
+        elif isinstance(embedding, mx.array | np.ndarray):
             # Ensure array is 1D
             if embedding.ndim > 1:
                 embedding = embedding.reshape(-1)
@@ -122,7 +115,7 @@ class EmbeddingsService:
                 # Last resort, assume the output itself is the embedding
                 return outputs
 
-        raise ValueError(f"Could not determine how to extract embeddings from model")
+        raise ValueError("Could not determine how to extract embeddings from model")
 
     def generate_embeddings(self, request: EmbeddingRequest) -> EmbeddingResponse:
         """Generate embeddings based on the request"""
@@ -147,7 +140,7 @@ class EmbeddingsService:
                     )
                 except Exception as e:
                     logger.debug(
-                        f"Failed with BERT method: {str(e)}. Trying general generate() function."
+                        f"Failed with BERT method: {e!s}. Trying general generate() function."
                     )
                     # Fall back to the generate function
                     output = generate(model, processor, text)
@@ -167,8 +160,8 @@ class EmbeddingsService:
                 embeddings.append(embedding_data)
 
             except Exception as e:
-                logger.error(f"Error generating embedding: {str(e)}", exc_info=True)
-                raise RuntimeError(f"Failed to generate embedding: {str(e)}")
+                logger.error(f"Error generating embedding: {e!s}", exc_info=True)
+                raise RuntimeError(f"Failed to generate embedding: {e!s}") from e
 
         # Create the full response
         response = EmbeddingResponse(

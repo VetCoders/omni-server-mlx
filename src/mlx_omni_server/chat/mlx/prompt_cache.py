@@ -6,7 +6,7 @@ to improve performance in multi-turn conversations.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any
 
 from mlx_lm.models.cache import (
     can_trim_prompt_cache,
@@ -56,8 +56,8 @@ class PromptCache:
         model_key: Model identifier to ensure cache matches the model
     """
 
-    tokens: List[int] = field(default_factory=list)
-    cache: List[Any] = field(default_factory=list)
+    tokens: list[int] = field(default_factory=list)
+    cache: list[Any] = field(default_factory=list)
     model_key: str = ""
 
     def extend_completion_cache(self, completion_tokens):

@@ -3,7 +3,6 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 from openai import OpenAI
-
 from src.mlx_omni_server.main import app
 
 logging.basicConfig(level=logging.INFO)
@@ -43,7 +42,7 @@ def test_images(openai_client):
         assert response.data[0].url is not None, "Image URL should not be None"
 
     except Exception as e:
-        logger.error(f"Test error in standard image generation: {str(e)}")
+        logger.error(f"Test error in standard image generation: {e!s}")
         raise
 
 
@@ -67,5 +66,5 @@ def test_images_b64_json(openai_client):
         ), "b64_json data should be a string"
 
     except Exception as e:
-        logger.error(f"Test error in b64_json image generation: {str(e)}")
+        logger.error(f"Test error in b64_json image generation: {e!s}")
         raise

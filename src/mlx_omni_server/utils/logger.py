@@ -1,19 +1,18 @@
+import contextlib
 import logging
-import os
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
 
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.text import Text
 
 # Create logs directory
-log_dir = "logs"
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+log_dir = Path("logs")
+log_dir.mkdir(parents=True, exist_ok=True)
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """Get project logger with optimized Rich configuration
 
     Args:
@@ -90,12 +89,8 @@ def set_logger_level(logger: logging.Logger, level: str):
 
     # Ensure all existing handlers respect the new level (RichHandler, etc.)
     for handler in logging.root.handlers:
-        try:
+        with contextlib.suppress(AttributeError, TypeError):
             handler.setLevel(log_level)
-        except (AttributeError, TypeError):
-            # If a handler doesn't support setLevel or is of an unexpected
-            # type, skip it.
-            pass
 
 
 # Default logger

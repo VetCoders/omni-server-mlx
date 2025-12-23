@@ -3,7 +3,6 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 from openai import NotFoundError, OpenAI
-
 from src.mlx_omni_server.main import app
 
 logging.basicConfig(level=logging.INFO)
@@ -75,7 +74,7 @@ def test_get_existing_model_with_details(openai_client: OpenAI):
 
     except Exception as e:
         logger.error(
-            f"Test error retrieving model '{model_id_to_test}' with details: {str(e)}"
+            f"Test error retrieving model '{model_id_to_test}' with details: {e!s}"
         )
         raise
 
@@ -104,7 +103,7 @@ def test_get_existing_model_without_details(openai_client: OpenAI):
 
     except Exception as e:
         logger.error(
-            f"Test error retrieving model '{model_id_to_test}' without details: {str(e)}"
+            f"Test error retrieving model '{model_id_to_test}' without details: {e!s}"
         )
         raise
 

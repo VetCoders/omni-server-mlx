@@ -11,22 +11,19 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Any
 
-from ..chat.mlx.chat_generator import ChatGenerator
 from ..chat.mlx.wrapper_cache import wrapper_cache
 from ..chat.openai.openai_adapter import OpenAIAdapter
 from ..chat.openai.schema import ChatCompletionRequest, ChatMessage, Role
 from ..utils.logger import logger
 from .normalizer import (
-    collect_system_preamble,
     has_media_content,
     normalise_responses_payload,
-    parts_to_plaintext,
     responses_to_chat_messages,
 )
 from .schema import (
-    OutputItem,
     ResponseRequest,
     ResponseResponse,
     ResponseStatus,
@@ -34,6 +31,9 @@ from .schema import (
     build_error_response,
     build_text_output,
 )
+
+if TYPE_CHECKING:
+    from ..chat.mlx.chat_generator import ChatGenerator
 
 
 class ResponsesAdapter:
@@ -157,7 +157,9 @@ class ResponsesAdapter:
             output=output_items,
             usage=ResponseUsage(
                 input_tokens=completion.usage.prompt_tokens if completion.usage else 0,
-                output_tokens=completion.usage.completion_tokens if completion.usage else 0,
+                output_tokens=completion.usage.completion_tokens
+                if completion.usage
+                else 0,
                 total_tokens=completion.usage.total_tokens if completion.usage else 0,
             ),
             _provider="mlx-omni-server",
@@ -186,7 +188,8 @@ class ResponsesAdapter:
         for turn in text_only_body.get("input", []):
             if isinstance(turn, dict):
                 turn["content"] = [
-                    p for p in turn.get("content", [])
+                    p
+                    for p in turn.get("content", [])
                     if isinstance(p, dict) and p.get("type") == "input_text"
                 ]
 

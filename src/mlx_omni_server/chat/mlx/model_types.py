@@ -1,9 +1,8 @@
 """MLX Model types and management."""
 
 from pathlib import Path
-from typing import Optional, Union
 
-import mlx.nn as nn
+from mlx import nn
 from mlx_lm.tokenizer_utils import TokenizerWrapper
 from mlx_lm.utils import load, load_config
 
@@ -28,7 +27,10 @@ except ImportError:
         elif isinstance(result, Path):
             return result
         else:
-            raise TypeError(f"Unexpected return type from get_model_path: {type(result)}")
+            raise TypeError(
+                f"Unexpected return type from get_model_path: {type(result)}"
+            )
+
 
 from ...utils.logger import logger
 from .tools.chat_template import ChatTemplate
@@ -36,8 +38,8 @@ from .tools.chat_template import ChatTemplate
 
 def load_mlx_model(
     model_id: str,
-    adapter_path: Optional[str] = None,
-    draft_model_id: Optional[str] = None,
+    adapter_path: str | None = None,
+    draft_model_id: str | None = None,
 ) -> "MLXModel":
     """Factory function to load MLX models.
 
@@ -121,13 +123,13 @@ class MLXModel:
     def __init__(
         self,
         model_id: str,
-        adapter_path: Optional[str],
-        draft_model_id: Optional[str],
+        adapter_path: str | None,
+        draft_model_id: str | None,
         model: nn.Module,
         tokenizer: TokenizerWrapper,
         chat_template: ChatTemplate,
-        draft_model: Optional[nn.Module] = None,
-        draft_tokenizer: Optional[TokenizerWrapper] = None,
+        draft_model: nn.Module | None = None,
+        draft_tokenizer: TokenizerWrapper | None = None,
     ):
         """Initialize MLX model container.
 
@@ -159,8 +161,8 @@ class MLXModel:
     def load(
         cls,
         model_id: str,
-        adapter_path: Optional[str] = None,
-        draft_model_id: Optional[str] = None,
+        adapter_path: str | None = None,
+        draft_model_id: str | None = None,
     ) -> "MLXModel":
         return load_mlx_model(model_id, adapter_path, draft_model_id)
 

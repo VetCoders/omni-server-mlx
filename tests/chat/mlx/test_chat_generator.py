@@ -246,7 +246,6 @@ class TestChatGenerator:
         for result in reasoning_wrapper.generate_stream(
             messages=messages, template_kwargs=template_kwargs
         ):
-
             # Accumulate content based on the type of delta
             if result.content.text_delta:
                 content = content + result.content.text_delta

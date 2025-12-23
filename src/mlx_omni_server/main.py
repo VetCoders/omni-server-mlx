@@ -3,6 +3,7 @@ import os
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .middleware.logging import RequestResponseLoggingMiddleware
 from .routers import api_router
@@ -10,13 +11,8 @@ from .utils.logger import logger, set_logger_level
 
 app = FastAPI(title="MLX Omni Server")
 
-# Add request/response logging middleware with custom levels
-app.add_middleware(
-    RequestResponseLoggingMiddleware,
-    # exclude_paths=["/health"]
-)
-
-from fastapi.middleware.cors import CORSMiddleware
+# Add request/response logging middleware
+app.add_middleware(RequestResponseLoggingMiddleware)
 
 app.include_router(api_router)
 

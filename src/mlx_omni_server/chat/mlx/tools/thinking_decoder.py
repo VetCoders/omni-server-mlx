@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class ThinkingDecoder:
@@ -9,7 +9,7 @@ class ThinkingDecoder:
         self.thinking_tag = thinking_tag
         self.accumulated_text = init_buffer
 
-    def _parse_stream_response(self, text: str) -> Optional[Dict[str, Any]]:
+    def _parse_stream_response(self, text: str) -> dict[str, Any] | None:
         # Check if in thinking mode
         thinking_end_tag = f"</{self.thinking_tag}>"
         thinking_start_tag = f"<{self.thinking_tag}>"
@@ -41,7 +41,7 @@ class ThinkingDecoder:
         # If current delta contains the end tag (from not having it to having it)
         elif not has_end_tag_before and has_end_tag_now:
             # Split the current delta
-            parts = text.split(thinking_end_tag, 1)
+            text.split(thinking_end_tag, 1)
             return {"delta_content": "", "delta_thinking": None}
         # If end tag was already encountered before
         elif has_end_tag_before:
@@ -51,7 +51,7 @@ class ThinkingDecoder:
             # Other cases, possibly thinking mode not enabled or other situations
             return {"delta_content": text, "delta_thinking": None}
 
-    def stream_decode(self, text: str) -> Optional[Dict[str, Any]]:
+    def stream_decode(self, text: str) -> dict[str, Any] | None:
         """Parse tool calls from model output."""
         return self._parse_stream_response(text)
 
@@ -95,6 +95,6 @@ class ThinkingDecoder:
                 "thinking": None,
             }
 
-    def decode(self, text: str) -> Optional[Dict[str, Any]]:
+    def decode(self, text: str) -> dict[str, Any] | None:
         """Parse thinking content from model output"""
         return self._parse_response(text)
