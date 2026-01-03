@@ -1,0 +1,21 @@
+name: Loctree
+
+on:
+  pull_request:
+    paths: ['src/**/*.py', 'tests/**/*.py']
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Loctree Analysis
+        run: |
+          pip install loctree-suite 2>/dev/null || echo "Loctree not in PyPI"
+          if command -v loct &>/dev/null; then
+            loct health || true
+          fi

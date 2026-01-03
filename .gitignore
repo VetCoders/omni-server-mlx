@@ -172,3 +172,5 @@ CLAUDE.md
 CLAUDE.local.md
 GEMINI.md
 .claude
+.ai-agents/
+.loctree/
