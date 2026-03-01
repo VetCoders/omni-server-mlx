@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
@@ -45,7 +46,7 @@ def load_tools_parser(tools_parser_type: str) -> BaseToolParser:
         return MistralToolsParser()
     if tools_parser_type == "qwen2" or tools_parser_type == "qwen3":
         return HuggingFaceToolParser()
-    if tools_parser_type == "qwen3_moe":
+    if re.match(r"qwen3.*_moe", tools_parser_type):
         return Qwen3MoeToolParser()
     if tools_parser_type == "glm4_moe":
         return GLM45ToolParser()
