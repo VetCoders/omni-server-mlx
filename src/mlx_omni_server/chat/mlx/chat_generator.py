@@ -476,7 +476,9 @@ class ChatGenerator:
                 chunk_index = len(generated_tokens)
 
                 # Determine which delta field to populate
-                if parse_result.thinking:
+                # Use 'is not None' to correctly handle empty string thinking
+                # (e.g. the opening <think> tag returns delta_thinking="")
+                if parse_result.thinking is not None:
                     content = StreamContent(
                         reasoning_delta=parse_result.thinking,
                         token=response.token,
@@ -484,7 +486,7 @@ class ChatGenerator:
                     )
                 else:
                     content = StreamContent(
-                        text_delta=parse_result.content or response.text,
+                        text_delta=parse_result.content if parse_result.content is not None else response.text,
                         token=response.token,
                         chunk_index=chunk_index,
                     )
