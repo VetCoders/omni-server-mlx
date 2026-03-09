@@ -22,14 +22,21 @@ class TestLoadToolsParser:
     def test_qwen2_returns_huggingface_parser(self):
         assert isinstance(load_tools_parser("qwen2"), HuggingFaceToolParser)
 
-    def test_qwen3_returns_huggingface_parser(self):
-        """qwen3 exact match should take precedence over the qwen3.*_moe regex."""
-        assert isinstance(load_tools_parser("qwen3"), HuggingFaceToolParser)
-
     def test_glm4_moe_returns_glm45_parser(self):
         assert isinstance(load_tools_parser("glm4_moe"), GLM45ToolParser)
 
-    # --- Qwen3 MOE regex branch ---
+    # --- Qwen3 prefix branch (all qwen3* variants use XML tool format) ---
+
+    def test_qwen3_returns_qwen3moe_parser(self):
+        """qwen3 uses the same XML tool call format as qwen3_moe."""
+        assert isinstance(load_tools_parser("qwen3"), Qwen3MoeToolParser)
+
+    def test_qwen3_5_returns_qwen3moe_parser(self):
+        """Regression: qwen3_5 model_type must not fall through to default."""
+        assert isinstance(load_tools_parser("qwen3_5"), Qwen3MoeToolParser)
+
+    def test_qwen3_moe_returns_qwen3moe_parser(self):
+        assert isinstance(load_tools_parser("qwen3_moe"), Qwen3MoeToolParser)
 
     def test_qwen3_dot_1_moe_returns_qwen3moe_parser(self):
         assert isinstance(load_tools_parser("qwen3.1_moe"), Qwen3MoeToolParser)
@@ -37,17 +44,9 @@ class TestLoadToolsParser:
     def test_qwen3_dot_5_moe_returns_qwen3moe_parser(self):
         assert isinstance(load_tools_parser("qwen3.5_moe"), Qwen3MoeToolParser)
 
-    def test_qwen3_dot_0_moe_returns_qwen3moe_parser(self):
-        assert isinstance(load_tools_parser("qwen3.0_moe"), Qwen3MoeToolParser)
-
-    def test_qwen3_underscore_moe_returns_qwen3moe_parser(self):
-        """qwen3_moe should match the regex (zero-width .* between '3' and '_moe')."""
-        assert isinstance(load_tools_parser("qwen3_moe"), Qwen3MoeToolParser)
-
-    def test_qwen3moe_no_separator_returns_huggingface_parser(self):
-        """qwen3moe (no underscore before moe) does NOT match r'qwen3.*_moe',
-        so it falls through to the default HuggingFaceToolParser."""
-        assert isinstance(load_tools_parser("qwen3moe"), HuggingFaceToolParser)
+    def test_qwen3moe_no_separator_returns_qwen3moe_parser(self):
+        """qwen3moe also matches startswith('qwen3')."""
+        assert isinstance(load_tools_parser("qwen3moe"), Qwen3MoeToolParser)
 
     # --- Default fallback ---
 
