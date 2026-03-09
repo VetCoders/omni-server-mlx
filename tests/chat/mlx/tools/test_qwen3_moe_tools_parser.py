@@ -289,5 +289,222 @@ Hi John, just confirming our meeting scheduled for tomorrow. Best regards!
         )
 
 
+class TestQwen3_5ToolParserIntegration(unittest.TestCase):
+    """Integration tests for Qwen3.5 model (model_type='qwen3_5').
+
+    Qwen3.5 models (e.g. mlx-community/Qwen3.5-0.8B-4bit) use the same XML
+    tool call format as Qwen3-MoE, so they share the Qwen3MoeToolParser.
+    These tests verify parsing of actual outputs observed from Qwen3.5 models.
+    """
+
+    def setUp(self):
+        self.tools_parser = Qwen3MoeToolParser()
+        # Set schema matching the get_weather tool used in real testing
+        self.tools_parser.set_tools_schema([
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city name",
+                            }
+                        },
+                        "required": ["location"],
+                    },
+                },
+            }
+        ])
+
+    def test_qwen3_5_single_tool_call(self):
+        """Parse a single tool call as produced by Qwen3.5-0.8B-4bit."""
+        text = (
+            "<tool_call>\n"
+            "<function=get_weather>\n"
+            "<parameter=location>\n"
+            "Sydney\n"
+            "</parameter>\n"
+            "</function>\n"
+            "</tool_call>"
+        )
+        result = self.tools_parser.parse_tools(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[0].arguments, {"location": "Sydney"})
+
+    def test_qwen3_5_tool_call_with_preceding_text(self):
+        """Qwen3.5 sometimes emits text before the tool call XML."""
+        text = (
+            "I will call the get_weather function for Sydney to check the "
+            "current weather information. However, the function has the "
+            "following parameters:\n\n"
+            "<tool_call>\n"
+            "<function=get_weather>\n"
+            "<parameter=location>\n"
+            "Sydney\n"
+            "</parameter>\n"
+            "</function>\n"
+            "</tool_call>"
+        )
+        result = self.tools_parser.parse_tools(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[0].arguments, {"location": "Sydney"})
+
+    def test_qwen3_5_tool_call_with_trailing_text(self):
+        """Qwen3.5 may emit text after the tool call XML in streaming."""
+        text = (
+            "I can analyze whether the user wants information from "
+            "Tokyo's weather, as I am restricted to using "
+            "`get_weather()` only.\n\n"
+            "<tool_call>\n"
+            "<function=get_weather>\n"
+            "<parameter=location>\n"
+            "Tokyo\n"
+            "</parameter>\n"
+            "</function>\n"
+            "</tool_call>"
+        )
+        result = self.tools_parser.parse_tools(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[0].arguments, {"location": "Tokyo"})
+
+    def test_qwen3_5_multiple_tool_calls(self):
+        """Parse multiple tool calls from Qwen3.5 output."""
+        self.tools_parser.set_tools_schema([
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {"type": "string"},
+                        },
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_time",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "timezone": {"type": "string"},
+                        },
+                    },
+                },
+            },
+        ])
+
+        text = (
+            "<tool_call>\n"
+            "<function=get_weather>\n"
+            "<parameter=location>\n"
+            "Sydney\n"
+            "</parameter>\n"
+            "</function>\n"
+            "</tool_call>\n"
+            "<tool_call>\n"
+            "<function=get_time>\n"
+            "<parameter=timezone>\n"
+            "Australia/Sydney\n"
+            "</parameter>\n"
+            "</function>\n"
+            "</tool_call>"
+        )
+        result = self.tools_parser.parse_tools(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[0].arguments, {"location": "Sydney"})
+        self.assertEqual(result[1].name, "get_time")
+        self.assertEqual(result[1].arguments, {"timezone": "Australia/Sydney"})
+
+    def test_qwen3_5_tool_call_with_type_conversion(self):
+        """Qwen3.5 XML parameters should be type-converted via schema."""
+        self.tools_parser.set_tools_schema([
+            {
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string"},
+                            "limit": {"type": "integer"},
+                            "include_meta": {"type": "boolean"},
+                        },
+                    },
+                },
+            }
+        ])
+
+        text = (
+            "<tool_call>\n"
+            "<function=search>\n"
+            "<parameter=query>\n"
+            "weather Sydney\n"
+            "</parameter>\n"
+            "<parameter=limit>\n"
+            "5\n"
+            "</parameter>\n"
+            "<parameter=include_meta>\n"
+            "true\n"
+            "</parameter>\n"
+            "</function>\n"
+            "</tool_call>"
+        )
+        result = self.tools_parser.parse_tools(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "search")
+        self.assertEqual(result[0].arguments["query"], "weather Sydney")
+        self.assertEqual(result[0].arguments["limit"], 5)
+        self.assertIs(result[0].arguments["include_meta"], True)
+
+    def test_qwen3_5_no_tool_call_in_plain_text(self):
+        """Qwen3.5 plain text response should return None."""
+        text = (
+            "I don't have access to real-time weather data right this moment. "
+            "Your next message will help me get the weather forecast today."
+        )
+        result = self.tools_parser.parse_tools(text)
+        self.assertIsNone(result)
+
+
+class TestQwen3_5RouterIntegration(unittest.TestCase):
+    """Verify the full routing path from model_type to parser for Qwen3.5."""
+
+    def test_qwen3_5_model_type_routes_to_xml_parser(self):
+        """config['model_type'] == 'qwen3_5' must produce Qwen3MoeToolParser."""
+        from mlx_omni_server.chat.mlx.tools.chat_template import load_tools_parser
+
+        parser = load_tools_parser("qwen3_5")
+        self.assertIsInstance(parser, Qwen3MoeToolParser)
+
+    def test_qwen3_5_parser_has_correct_markers(self):
+        """Qwen3.5 parser must use XML tool_call markers."""
+        from mlx_omni_server.chat.mlx.tools.chat_template import load_tools_parser
+
+        parser = load_tools_parser("qwen3_5")
+        self.assertEqual(parser.start_tool_calls, "<tool_call>")
+        self.assertEqual(parser.end_tool_calls, "</tool_call>")
+
+
 if __name__ == "__main__":
     unittest.main()
