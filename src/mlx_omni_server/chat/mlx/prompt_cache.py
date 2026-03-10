@@ -63,6 +63,9 @@ class PromptCache:
     def extend_completion_cache(self, completion_tokens):
         self.tokens.extend(completion_tokens)
 
+    def append_token(self, token):
+        self.tokens.append(token)
+
     def reset_prompt_cache(self, model: MLXModel, prompt):
         logger.debug("*** Resetting cache. ***")
         self.model_key = model.model_id
@@ -96,8 +99,7 @@ class PromptCache:
         com_prefix_len = common_prefix_len(self.tokens, prompt)
         prompt_cached_tokens = 0
 
-        # Leave at least one token in the prompt
-        com_prefix_len = min(com_prefix_len, len(prompt) - 1)
+        com_prefix_len = min(com_prefix_len, len(prompt))
 
         # Condition 1: Model changed or no common prefix at all. Reset cache.
         if self.model_key != model.model_id or com_prefix_len == 0:
@@ -108,8 +110,13 @@ class PromptCache:
             logger.debug(
                 f"*** Cache is prefix of prompt (cache_len: {cache_len}, prompt_len: {prompt_len}). Processing suffix. ***"
             )
-            prompt = prompt[com_prefix_len:]
-            self.tokens.extend(prompt)
+            if com_prefix_len == prompt_len:
+                # Exact same prompt resubmitted - feed last token only to keep
+                # stream_generate happy (it requires a non-empty prompt).
+                prompt = prompt[-1:]
+            else:
+                prompt = prompt[com_prefix_len:]
+                self.tokens.extend(prompt)
             prompt_cached_tokens = com_prefix_len
 
         # Condition 3: Common prefix exists but is shorter than cache length. Attempt trim.
@@ -118,14 +125,22 @@ class PromptCache:
                 f"*** Common prefix ({com_prefix_len}) shorter than cache ({cache_len}). Attempting trim. ***"
             )
 
-            if can_trim_prompt_cache(self.cache):
-                num_to_trim = cache_len - com_prefix_len
+            # Back off 1 token so the model re-sees the transition boundary
+            # (e.g. role marker -> content), which is critical for correct generation.
+            safe_len = max(0, com_prefix_len - 1)
+            num_to_trim = cache_len - safe_len
+
+            if num_to_trim > 0 and can_trim_prompt_cache(self.cache):
                 logger.debug(f"    Trimming {num_to_trim} tokens from cache.")
                 trim_prompt_cache(self.cache, num_to_trim)
-                self.tokens = self.tokens[:com_prefix_len]
-                prompt = prompt[com_prefix_len:]
-                self.tokens.extend(prompt)
-                prompt_cached_tokens = com_prefix_len
+                self.tokens = self.tokens[:safe_len]
+                prompt_suffix = prompt[safe_len:]
+                if prompt_suffix:
+                    prompt = prompt_suffix
+                    self.tokens.extend(prompt_suffix)
+                elif safe_len > 0:
+                    prompt = self.tokens[-1:]
+                prompt_cached_tokens = safe_len
             else:
                 logger.debug("    Cache cannot be trimmed. Resetting cache.")
                 self.reset_prompt_cache(model, prompt)
