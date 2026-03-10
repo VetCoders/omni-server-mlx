@@ -289,6 +289,47 @@ Hi John, just confirming our meeting scheduled for tomorrow. Best regards!
         )
 
 
+class TestQwen3MoeToolParserJsonFormat(unittest.TestCase):
+    """Tests for JSON-based tool call format (HuggingFace unified format)."""
+
+    def setUp(self):
+        self.tools_parser = Qwen3MoeToolParser()
+
+    def test_qwen3_moe_decode_json_tool_call(self):
+        # Qwen3 models can emit <tool_call>{"name":...,"arguments":...}</tool_call>
+        text = '<tool_call>\n{"name": "get_weather", "arguments": {"location": "San Francisco"}}\n</tool_call>'
+        result = self.tools_parser.parse_tools(text)
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[0].arguments, {"location": "San Francisco"})
+
+    def test_qwen3_moe_decode_multiple_json_tool_calls(self):
+        text = (
+            '<tool_call>\n{"name": "get_weather", "arguments": {"location": "Tokyo"}}\n</tool_call>\n'
+            '<tool_call>\n{"name": "get_time", "arguments": {"timezone": "Asia/Tokyo"}}\n</tool_call>'
+        )
+        result = self.tools_parser.parse_tools(text)
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[1].name, "get_time")
+
+    def test_qwen3_moe_json_fallback_to_xml(self):
+        # XML format should still work when JSON parsing returns None
+        text = """<tool_call>
+<function=get_weather>
+<parameter=location>
+Boston
+</parameter>
+</function>
+</tool_call>"""
+        result = self.tools_parser.parse_tools(text)
+        self.assertIsNotNone(result)
+        self.assertEqual(result[0].name, "get_weather")
+        self.assertEqual(result[0].arguments, {"location": "Boston"})
+
+
 class TestQwen3_5ToolParserIntegration(unittest.TestCase):
     """Integration tests for Qwen3.5 model (model_type='qwen3_5').
 
