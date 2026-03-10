@@ -39,7 +39,7 @@ class ChatGenerator:
         self.model = model
         self.tokenizer = model.tokenizer
         self.chat_template = model.chat_template
-        self._prompt_cache = None
+        self._prompt_cache_pool = None
         self._logprobs_processor = None
 
     @classmethod
@@ -137,13 +137,13 @@ class ChatGenerator:
         )
 
     @property
-    def prompt_cache(self):
-        """Lazy initialization of prompt cache."""
-        if self._prompt_cache is None:
-            from .prompt_cache import PromptCache
+    def prompt_cache_pool(self):
+        """Lazy initialization of prompt cache pool."""
+        if self._prompt_cache_pool is None:
+            from .prompt_cache_pool import PromptCachePool
 
-            self._prompt_cache = PromptCache()
-        return self._prompt_cache
+            self._prompt_cache_pool = PromptCachePool()
+        return self._prompt_cache_pool
 
     @property
     def logprobs_processor(self):
@@ -410,6 +410,7 @@ class ChatGenerator:
         # Record start time for first token latency measurement
         request_start_time = time.perf_counter()
         first_token_time = None
+        prompt_cache = None  # Local exclusive cache for this request
 
         try:
 
@@ -427,7 +428,11 @@ class ChatGenerator:
             cached_tokens = 0
 
             if enable_prompt_cache:
-                processed_prompt, cached_tokens = self.prompt_cache.get_prompt_cache(
+                # Get an cache copy from the pool
+                prompt_cache = self.prompt_cache_pool.get_cache(
+                    tokenized_prompt, self.model.model_id
+                )
+                processed_prompt, cached_tokens = prompt_cache.get_prompt_cache(
                     self.model, tokenized_prompt
                 )
 
@@ -439,8 +444,8 @@ class ChatGenerator:
             )
 
             # Add cache to kwargs if available
-            if enable_prompt_cache and self.prompt_cache.cache:
-                mlx_kwargs["prompt_cache"] = self.prompt_cache.cache
+            if enable_prompt_cache and prompt_cache is not None and prompt_cache.cache:
+                mlx_kwargs["prompt_cache"] = prompt_cache.cache
 
             # Stream generation
             generated_tokens = []
@@ -509,9 +514,12 @@ class ChatGenerator:
                     from_draft=response.from_draft,
                 )
 
-            # Extend cache with generated tokens if caching is enabled
-            if enable_prompt_cache and generated_tokens:
-                self.prompt_cache.extend_completion_cache(generated_tokens)
+            # Return cache to pool only on clean completion so that a misaligned
+            # tokens/KV-cache pair from a partial generation is never reused.
+            if enable_prompt_cache and prompt_cache is not None:
+                if generated_tokens:
+                    prompt_cache.extend_completion_cache(generated_tokens)
+                self.prompt_cache_pool.put_cache(prompt_cache)
 
         except Exception as e:
             logger.error(f"Error during stream generation: {e}")
